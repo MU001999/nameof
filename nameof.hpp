@@ -129,11 +129,23 @@ inline std::ostream &operator<<(std::ostream &out, const fixed_string<N> &str)
 
 template<typename T>
 struct nameof_impl;
+
+template<>
+struct nameof_impl<void>
+{
+    static constexpr fixed_string value = "void";
+};
 template<>
 struct nameof_impl<int>
 {
     static constexpr fixed_string value = "int";
 };
+template<>
+struct nameof_impl<double>
+{
+    static constexpr fixed_string value = "double";
+};
+
 template<typename T>
 struct nameof_impl<T const>
 {
@@ -144,6 +156,7 @@ struct nameof_impl<T volatile>
 {
     static constexpr auto value = nameof_impl<T>::value + " volatile";
 };
+
 template<typename T>
 struct nameof_impl<T*>
 {

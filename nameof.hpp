@@ -176,6 +176,6 @@ struct nameof_impl<T[N]>
 
 template<typename T>
 inline constexpr auto nameof = details::nameof_impl<T>::value;
-} // nameof
+} // namespace nameof
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef __NAMEOF_HPP__
-#define __NAMEOF_HPP__
+#ifndef __MU001999_NAMEOF_HPP__
+#define __MU001999_NAMEOF_HPP__
 
 #include <cctype>
 #include <ostream>
@@ -9,11 +9,19 @@ namespace nameof
 {
 namespace details
 {
+inline constexpr bool support_nameof_type =
+#if defined(__clang__) && __clang_major__ >= 5 || defined(__GNUC__) && __GNUC__ >= 7 || defined(_MSC_VER) && _MSC_VER >= 1910
+true
+#else
+false
+#endif
+;
+
 template<std::size_t N>
 struct fixed_string
 {
     static constexpr std::size_t size = N;
-    char data[size + 1] {};
+    char data[N + 1]{};
 
     constexpr fixed_string() {};
     constexpr fixed_string(char chr)
@@ -24,12 +32,19 @@ struct fixed_string
         }
     }
     template<std::size_t N2>
-    constexpr fixed_string(const char (&str)[N2])
+    constexpr fixed_string(const char(&str)[N2])
     {
         static_assert(N == N2 - 1);
         for (std::size_t i = 0; i < N; ++i)
         {
             data[i] = str[i];
+        }
+    }
+    constexpr fixed_string(const char* begin)
+    {
+        for (std::size_t i = 0; i < N; ++i)
+        {
+            data[i] = begin[i];
         }
     }
 
@@ -44,7 +59,7 @@ struct fixed_string
     }
 
     template<std::size_t N2>
-    constexpr auto operator+(const char (&rhs)[N2]) const
+    constexpr auto operator+(const char(&rhs)[N2]) const
     {
         fixed_string<N + N2 - 1> result;
         for (std::size_t i = 0; i < N; ++i)
@@ -59,7 +74,7 @@ struct fixed_string
     }
 
     template<std::size_t N2>
-    constexpr auto operator+(const fixed_string<N2> &rhs) const
+    constexpr auto operator+(const fixed_string<N2>& rhs) const
     {
         fixed_string<N + N2> result;
         for (std::size_t i = 0; i < N; ++i)
@@ -73,11 +88,12 @@ struct fixed_string
         return result;
     }
 };
-fixed_string(char) -> fixed_string<1>;
-template<std::size_t N> fixed_string(const char(&str)[N]) -> fixed_string<N - 1>;
+fixed_string()->fixed_string<0>;
+fixed_string(char)->fixed_string<1>;
+template<std::size_t N> fixed_string(const char(&str)[N])->fixed_string<N - 1>;
 
 template<std::size_t N1, std::size_t N2>
-constexpr auto operator+(const char (&lhs)[N1], const fixed_string<N2> &rhs)
+constexpr auto operator+(const char(&lhs)[N1], const fixed_string<N2>& rhs)
 {
     fixed_string<N1 + N2 - 1> result;
 
@@ -118,7 +134,7 @@ constexpr auto to_fixed_string()
 }
 
 template<std::size_t N>
-inline std::ostream &operator<<(std::ostream &out, const fixed_string<N> &str)
+inline std::ostream& operator<<(std::ostream& out, const fixed_string<N>& str)
 {
     for (std::size_t i = 0; i < str.size; ++i)
     {
@@ -128,22 +144,28 @@ inline std::ostream &operator<<(std::ostream &out, const fixed_string<N> &str)
 }
 
 template<typename T>
-struct nameof_impl;
+constexpr auto n() noexcept
+{
+    if constexpr (support_nameof_type)
+    {
+#if defined(__clang__)
+        return fixed_string<sizeof(__PRETTY_FUNCTION__) - 33>(__PRETTY_FUNCTION__ + 31);
+#elif defined(__GNUC__)
+        return fixed_string<sizeof(__PRETTY_FUNCTION__) - 48>(__PRETTY_FUNCTION__ + 46);
+#elif defined(_MSC_VER)
+        return fixed_string<sizeof(__FUNCSIG__) - 49>(__FUNCSIG__ + 32);
+#endif
+    }
+    else
+    {
+        return fixed_string();
+    }
+}
 
-template<>
-struct nameof_impl<void>
+template<typename T>
+struct nameof_impl
 {
-    static constexpr fixed_string value = "void";
-};
-template<>
-struct nameof_impl<int>
-{
-    static constexpr fixed_string value = "int";
-};
-template<>
-struct nameof_impl<double>
-{
-    static constexpr fixed_string value = "double";
+    static constexpr auto value = n<T>();
 };
 
 template<typename T>

@@ -189,6 +189,11 @@ struct nameof_impl<T&>
 {
     static constexpr auto value = "&{" + nameof_impl<T>::value + "}";
 };
+template<typename T>
+struct nameof_impl<T&&>
+{
+    static constexpr auto value = "&&{" + nameof_impl<T>::value + "}";
+};
 template<typename T, std::size_t N>
 struct nameof_impl<T[N]>
 {

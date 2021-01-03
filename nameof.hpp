@@ -48,6 +48,37 @@ struct fixed_string
         }
     }
 
+    template<std::size_t pos, std::size_t n = size>
+    constexpr auto substr() const
+    {
+        constexpr std::size_t len = (n > size - pos) ? (size - pos) : n;
+        fixed_string<len> result;
+
+        for (std::size_t i = pos; i < pos + len; ++i)
+        {
+            result[i - pos] = data[i];
+        }
+
+        return result;
+    }
+
+    constexpr std::size_t find(char ch, std::size_t pos = 0) const
+    {
+        for (std::size_t i = pos; i < size; ++i)
+        {
+            if (data[i] == ch)
+            {
+                return i;
+            }
+        }
+        return size;
+    }
+
+    constexpr char &operator[](std::size_t i)
+    {
+        return data[i];
+    }
+
     constexpr char operator[](std::size_t i) const
     {
         return data[i];
@@ -84,6 +115,23 @@ struct fixed_string
         for (std::size_t i = 0; i < N2; ++i)
         {
             result.data[i + N] = rhs[i];
+        }
+        return result;
+    }
+
+    template<std::size_t N2>
+    constexpr auto operator|(const fixed_string<N2>& rhs) const
+    {
+        fixed_string<N + N2 + 2> result;
+        for (std::size_t i = 0; i < N; ++i)
+        {
+            result.data[i] = data[i];
+        }
+        result.data[N] = ',';
+        result.data[N + 1] = ' ';
+        for (std::size_t i = 0; i < N2; ++i)
+        {
+            result.data[i + N + 2] = rhs[i];
         }
         return result;
     }
@@ -166,6 +214,12 @@ template<typename T>
 struct nameof_impl
 {
     static constexpr auto value = n<T>();
+};
+
+template<template<typename ...> typename T, typename ...Ts>
+struct nameof_impl<T<Ts...>>
+{
+    static constexpr auto value = (n<T<Ts...>>().template substr<0, n<T<Ts...>>().find('<') + 1>() + (nameof_impl<Ts>::value | ...) + '>');
 };
 
 template<typename T>

@@ -1,4 +1,5 @@
 #include "nameof.hpp"
+#include <vector>
 #include <iostream>
 
 namespace A
@@ -20,4 +21,6 @@ int main()
 
     using D = A::B::C;
     std::cout << nameof::nameof<D> << std::endl;
+
+    std::cout << nameof::nameof<std::vector<int>> << std::endl;
 }
